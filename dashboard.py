@@ -2,6 +2,10 @@ import streamlit as st
 import pandas as pd
 import db_manager as db
 import time
+import importlib
+
+# Force sync with newest backend changes
+importlib.reload(db)
 
 st.set_page_config(page_title="E-Commerce Dashboard", layout="wide")
 
@@ -13,19 +17,25 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
+
 # Authentication Layer
 if 'authenticated' not in st.session_state:
     st.session_state.authenticated = False
 
-def login():
-    st.markdown("<h2 style='text-align: center;'>🔒 Secure Access Console</h2>", unsafe_allow_html=True)
-    with st.container():
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            with st.form("login_form"):
-                user = st.text_input("Username")
-                pw = st.text_input("Password", type="password")
-                if st.form_submit_button("Login", use_container_width=True):
+def login_screen():
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center;'>🔒 Operations Console Login</h2>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: gray;'>Enter credentials to access real-time metrics and order processing.</p>", unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        with st.form("login_form"):
+            user = st.text_input("Username")
+            pw = st.text_input("Password", type="password")
+            submitted = st.form_submit_button("Authenticate", use_container_width=True)
+            
+            if submitted:
+                if hasattr(db, 'verify_user'):
                     success, msg = db.verify_user(user, pw)
                     if success:
                         st.session_state.authenticated = True
@@ -35,23 +45,27 @@ def login():
                         st.rerun()
                     else:
                         st.error(msg)
-    st.stop() # Prevents the rest of the app from running
+                else:
+                    st.error("System Error: Backend verification module not ready. Please refresh.")
 
 if not st.session_state.authenticated:
-    login()
+    login_screen()
+    st.stop()
 
 # --- MAIN DASHBOARD (Only visible if authenticated) ---
 with st.sidebar:
     st.header("Admin Controls")
     st.info(f"Logged in as: {st.session_state.get('user', 'Unknown')}")
-    if st.button("Logout"):
-        st.session_state.authenticated = False
-        st.rerun()
     st.divider()
     st.success("Database Connected")
     st.write("Welcome to the Operations Portal. Navigate through the main tabs to monitor live sales and check inventory alerts.")
     st.divider()
     st.caption("System Status: Online")
+    
+    st.markdown("<br>" * 10, unsafe_allow_html=True) # Push the button down
+    if st.button("Logout", use_container_width=True):
+        st.session_state.authenticated = False
+        st.rerun()
 
 st.markdown("<h1 style='text-align: center; margin-bottom: 20px;'>E-Commerce Order & Inventory Management</h1>", unsafe_allow_html=True)
 
