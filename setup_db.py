@@ -28,6 +28,7 @@ try:
     cursor.execute("CREATE TABLE IF NOT EXISTS Orders (id INT AUTO_INCREMENT PRIMARY KEY, customer_id INT NOT NULL, order_date DATETIME DEFAULT CURRENT_TIMESTAMP, total_amount DECIMAL(10, 2) NOT NULL, FOREIGN KEY (customer_id) REFERENCES Customers(id));")
     cursor.execute("CREATE TABLE IF NOT EXISTS Order_Items (id INT AUTO_INCREMENT PRIMARY KEY, order_id INT NOT NULL, product_id INT NOT NULL, quantity INT NOT NULL, price DECIMAL(10, 2) NOT NULL, FOREIGN KEY (order_id) REFERENCES Orders(id), FOREIGN KEY (product_id) REFERENCES Products(id));")
     cursor.execute("CREATE TABLE IF NOT EXISTS Alerts (id INT AUTO_INCREMENT PRIMARY KEY, product_id INT NOT NULL, alert_message VARCHAR(255) NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (product_id) REFERENCES Products(id));")
+    cursor.execute("CREATE TABLE IF NOT EXISTS Users (id INT AUTO_INCREMENT PRIMARY KEY, username VARCHAR(255) UNIQUE NOT NULL, password_hash VARCHAR(255) NOT NULL);")
 
     # Setup Views
     cursor.execute("CREATE OR REPLACE VIEW Monthly_Revenue_View AS SELECT DATE_FORMAT(order_date, '%Y-%m') AS month, SUM(total_amount) AS total_revenue, COUNT(id) AS total_orders FROM Orders GROUP BY DATE_FORMAT(order_date, '%Y-%m') ORDER BY month DESC;")
@@ -52,16 +53,22 @@ try:
     cursor.execute(trigger_sql)
 
     # Setup Data
+    import bcrypt
+    password = "admin123"
+    hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    
     cursor.execute("SET FOREIGN_KEY_CHECKS = 0;")
     cursor.execute("TRUNCATE TABLE Alerts;")
     cursor.execute("TRUNCATE TABLE Order_Items;")
     cursor.execute("TRUNCATE TABLE Orders;")
     cursor.execute("TRUNCATE TABLE Customers;")
     cursor.execute("TRUNCATE TABLE Products;")
+    cursor.execute("TRUNCATE TABLE Users;")
     cursor.execute("SET FOREIGN_KEY_CHECKS = 1;")
     
     cursor.execute("INSERT INTO Products (name, price, stock) VALUES ('Wireless Headphones', 99.99, 100), ('Mechanical Keyboard', 149.50, 50), ('Gaming Mouse', 59.99, 75), ('27-inch 4K Monitor', 299.00, 30), ('USB-C Hub', 25.00, 200), ('Laptop Stand', 35.00, 150), ('Webcam 1080p', 45.00, 60), ('Ergonomic Chair', 199.99, 15);")
     cursor.execute("INSERT INTO Customers (name, email) VALUES ('Alice Smith', 'alice@example.com'), ('Bob Johnson', 'bob@example.com'), ('Charlie Brown', 'charlie@example.com'), ('Diana Prince', 'diana@example.com');")
+    cursor.execute("INSERT INTO Users (username, password_hash) VALUES (%s, %s)", ("admin", hashed))
 
     conn.commit()
     print("Database `ecommerce_db` created and populated with Mock Data successfully!")

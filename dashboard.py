@@ -13,8 +13,41 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
+# Authentication Layer
+if 'authenticated' not in st.session_state:
+    st.session_state.authenticated = False
+
+def login():
+    st.markdown("<h2 style='text-align: center;'>🔒 Secure Access Console</h2>", unsafe_allow_html=True)
+    with st.container():
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            with st.form("login_form"):
+                user = st.text_input("Username")
+                pw = st.text_input("Password", type="password")
+                if st.form_submit_button("Login", use_container_width=True):
+                    success, msg = db.verify_user(user, pw)
+                    if success:
+                        st.session_state.authenticated = True
+                        st.session_state.user = user
+                        st.success(msg)
+                        time.sleep(0.5)
+                        st.rerun()
+                    else:
+                        st.error(msg)
+    st.stop() # Prevents the rest of the app from running
+
+if not st.session_state.authenticated:
+    login()
+
+# --- MAIN DASHBOARD (Only visible if authenticated) ---
 with st.sidebar:
     st.header("Admin Controls")
+    st.info(f"Logged in as: {st.session_state.get('user', 'Unknown')}")
+    if st.button("Logout"):
+        st.session_state.authenticated = False
+        st.rerun()
+    st.divider()
     st.success("Database Connected")
     st.write("Welcome to the Operations Portal. Navigate through the main tabs to monitor live sales and check inventory alerts.")
     st.divider()

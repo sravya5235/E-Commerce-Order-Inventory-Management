@@ -118,3 +118,28 @@ def add_customer(name, email):
         if conn.is_connected():
             cursor.close()
             conn.close()
+def verify_user(username, password):
+    """Verifies a user's credentials using bcrypt."""
+    import bcrypt
+    conn = get_connection()
+    if conn is None:
+        return False, "Database connection failed"
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT password_hash FROM Users WHERE username = %s", (username,))
+        result = cursor.fetchone()
+        
+        if result:
+            stored_hash = result[0].encode('utf-8')
+            if bcrypt.checkpw(password.encode('utf-8'), stored_hash):
+                return True, "Login successful"
+            else:
+                return False, "Invalid password"
+        else:
+            return False, "User not found"
+    except Error as e:
+        return False, f"Verification error: {e}"
+    finally:
+        if conn.is_connected():
+            cursor.close()
+            conn.close()
