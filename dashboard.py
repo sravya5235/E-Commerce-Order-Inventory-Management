@@ -3,6 +3,7 @@ import pandas as pd
 import db_manager as db
 import time
 import importlib
+import os
 
 # Force sync with newest backend changes
 importlib.reload(db)
@@ -62,7 +63,14 @@ with st.sidebar:
     st.divider()
     st.caption("System Status: Online")
     
-    st.markdown("<br>" * 10, unsafe_allow_html=True) # Push the button down
+    st.markdown("---")
+    st.subheader("System Diagnostics")
+    st.write(f"**Database:** `{os.getenv('DB_NAME', 'ecommerce_db')}`")
+    st.write(f"**Server:** `Localhost:8501`")
+    st.write(f"**Host:** `{os.getenv('DB_HOST', 'localhost')}`")
+    
+    # Just a bit more space before the logout button
+    st.markdown("<br>" * 5, unsafe_allow_html=True) 
     if st.button("Logout", use_container_width=True):
         st.session_state.authenticated = False
         st.rerun()
